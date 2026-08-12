@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Agent | NCERT &amp; CBSE AI Paper Generator</title>
+  <meta name="description" content="Generate NCERT/CBSE-aligned school assignments with step-by-step marking schemes, exported as professional PDFs using Google Gemini AI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ══════════════════════════════════════════
+       CSS RESET & TOKENS
+    ══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0a0a0a;
+      --surface:    #111111;
+      --surface-2:  #1a1a1a;
+      --border:     #2a2a2a;
+      --border-2:   #333333;
+      --text:       #e8e8e8;
+      --text-muted: #888888;
+      --text-dim:   #555555;
+      --accent:     #ffffff;
+      --accent-dim: rgba(255,255,255,0.06);
+
+      --radius:     8px;
+      --radius-lg:  14px;
+      --font:       'Inter', system-ui, sans-serif;
+      --mono:       'JetBrains Mono', monospace;
+      --transition: 150ms ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════════
+       GRID BACKGROUND
+    ══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 70%);
+    }
+
+    /* ══════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════ */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ══════════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════════ */
+    .site-header {
+      text-align: center;
+      margin-bottom: 52px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    .header-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(255,255,255,0.5);
+    }
+
+    .site-header h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .site-header p {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ══════════════════════════════════════════
+       CARD
+    ══════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 16px;
+      transition: border-color var(--transition);
+    }
+
+    .card:hover { border-color: var(--border-2); }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ══════════════════════════════════════════
+       FORM ELEMENTS
+    ══════════════════════════════════════════ */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+    }
+
+    .form-full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+      letter-spacing: 0.04em;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 34px;
+      cursor: pointer;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: rgba(255,255,255,0.35);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+    }
+
+    select option {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* ── Textarea ─────────────────────────────── */
+    textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.6;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    textarea:focus {
+      border-color: rgba(255,255,255,0.35);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+    }
+
+    textarea::placeholder { color: var(--text-dim); }
+
+    /* field hint below textarea */
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+
+    /* section divider inside a card */
+    .intra-divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* tag pills inside textarea label row */
+    .field-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border: 1px solid var(--border-2);
+      border-radius: 999px;
+      color: var(--text-muted);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── Slider ──────────────────────────────── */
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .slider-row label {
+      min-width: 170px;
+      margin-bottom: 0;
+      font-size: 13px;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .slider-label-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--border);
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--border-2);
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.1);
+    }
+
+    .slider-value {
+      min-width: 32px;
+      text-align: right;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    /* ══════════════════════════════════════════
+       MARKS SUMMARY
+    ══════════════════════════════════════════ */
+    .marks-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .marks-summary { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .mark-chip {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .mark-chip-val {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .mark-chip-lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ══════════════════════════════════════════
+       GENERATE BUTTON
+    ══════════════════════════════════════════ */
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    .btn-generate:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* ══════════════════════════════════════════
+       STATUS / LOADER
+    ══════════════════════════════════════════ */
+    .status-box {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    .status-box.visible { display: flex; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border-2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-steps span {
+      font-size: 12px;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+
+    .status-steps span.active {
+      opacity: 1;
+      color: var(--text);
+    }
+
+    /* ══════════════════════════════════════════
+       RESULT PANEL
+    ══════════════════════════════════════════ */
+    .result-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-top: 16px;
+    }
+
+    .result-panel.visible { display: block; }
+
+    .result-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 600px) {
+      .result-meta { grid-template-columns: 1fr 1fr; }
+      .result-panel { padding: 20px; }
+    }
+
+    .meta-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    .meta-item .key {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .meta-item .val {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--surface-2);
+      color: var(--accent);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .btn-download:hover {
+      background: var(--accent-dim);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    /* ══════════════════════════════════════════
+       ERROR BOX
+    ══════════════════════════════════════════ */
+    .error-box {
+      display: none;
+      margin-top: 12px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-left: 3px solid rgba(255,255,255,0.5);
+      border-radius: var(--radius);
+    }
+    .error-box.visible { display: block; }
+
+    .error-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+    .error-icon  { font-size: 16px; line-height: 1; }
+    .error-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border-2);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .error-msg {
+      font-size: 13px;
+      color: #d0d0d0;
+      margin: 0 0 6px;
+      line-height: 1.55;
+    }
+    .error-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════ */
+    .site-footer {
+      text-align: center;
+      padding-top: 48px;
+      font-size: 12px;
+      color: var(--text-dim);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ══════════════════════════════════════════
+       ICON SVG UTIL
+    ══════════════════════════════════════════ */
+    .icon {
+      width: 16px; height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════════
+       API KEY NOTICE
+    ══════════════════════════════════════════ */
+    .api-notice {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-left: 3px solid rgba(255,255,255,0.4);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .api-notice code {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: var(--border);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--text);
+    }
+    /* ══════════════════════════════════════════
+       DIFFICULTY CARDS
+    ══════════════════════════════════════════ */
+    .diff-card {
+      display: block;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .diff-card:hover {
+      border-color: var(--border-2);
+    }
+
+    .diff-card.selected {
+      border-color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .diff-card-inner {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .diff-tag {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .diff-card.selected .diff-tag {
+      color: var(--text-muted);
+    }
+
+    .diff-card-inner strong {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+    }
+
+    .diff-card-inner p {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ── HEADER ─────────────────────────────── -->
+    <header class="site-header">
+      <div class="header-badge">Gemini 2.5 Flash · NCERT / CBSE</div>
+      <h1>Assignment Agent</h1>
+      <p>Generate NCERT &amp; CBSE aligned assignments with step-by-step marking schemes — export as professional PDFs in seconds.</p>
+    </header>
+
+    <!-- ── API KEY NOTICE ─────────────────────── -->
+    <div class="api-notice" id="api_notice">
+      <strong style="display:inline;font-weight:600;">Setup:</strong>
+      Set your Gemini API key in a <code>.env</code> file as <code>GEMINI_API_KEY=your_key_here</code>
+    </div>
+
+    <!-- ── CLASS, TOPIC & DIFFICULTY ─────────────────── -->
+    <!-- Card 1 — Class, Topic, Difficulty -->
+    <div class="card">
+      <div class="card-title">Assignment Details</div>
+      <div class="form-grid">
+
+        <div>
+          <label for="class_level">Class</label>
+          <select id="class_level">
+            <optgroup label="Primary">
+              <option value="Class 1">Class 1</option>
+              <option value="Class 2">Class 2</option>
+              <option value="Class 3">Class 3</option>
+              <option value="Class 4">Class 4</option>
+              <option value="Class 5">Class 5</option>
+            </optgroup>
+            <optgroup label="Middle School">
+              <option value="Class 6">Class 6</option>
+              <option value="Class 7">Class 7</option>
+              <option value="Class 8">Class 8</option>
+            </optgroup>
+            <optgroup label="Secondary">
+              <option value="Class 9">Class 9</option>
+              <option value="Class 10" selected>Class 10</option>
+              <option value="Class 11">Class 11</option>
+              <option value="Class 12">Class 12</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div>
+          <label for="topic">Main Topic / Chapter <span class="field-badge">Required</span></label>
+          <input type="text" id="topic"
+            placeholder="e.g. Photosynthesis, Quadratic Equations, The French Revolution…" />
+          <div class="field-hint">The primary chapter or concept from the NCERT syllabus.</div>
+        </div>
+
+        <!-- Difficulty Level — full width -->
+        <div class="form-full">
+          <label>Difficulty Level</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:4px;">
+
+            <label class="diff-card" id="diff-standard">
+              <input type="radio" name="difficulty" value="standard" checked onchange="updateDiffDesc()" hidden />
+              <div class="diff-card-inner">
+                <span class="diff-tag">NCERT Baseline</span>
+                <strong>Standard</strong>
+                <p>Direct NCERT recall &amp; single-step questions — ideal for regular class tests.</p>
+              </div>
+            </label>
+
+            <label class="diff-card" id="diff-advanced">
+              <input type="radio" name="difficulty" value="advanced" onchange="updateDiffDesc()" hidden />
+              <div class="diff-card-inner">
+                <span class="diff-tag">CBSE Board</span>
+                <strong>Advanced</strong>
+                <p>Application &amp; analysis level — matches CBSE Board PYQ difficulty &amp; pattern.</p>
+              </div>
+            </label>
+
+            <label class="diff-card" id="diff-olympiad">
+              <input type="radio" name="difficulty" value="olympiad" onchange="updateDiffDesc()" hidden />
+              <div class="diff-card-inner">
+                <span class="diff-tag">JEE / Olympiad</span>
+                <strong>Olympiad</strong>
+                <p>JEE Main / JEE Advanced / NTSE style — deep conceptual &amp; multi-step problems.</p>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 2 — Content Brief -->
+    <div class="card">
+      <div class="card-title">Content Brief <span class="field-badge" style="opacity:.6;">Optional</span></div>
+      <div class="form-grid">
+
+        <!-- Sub-topics -->
+        <div class="form-full">
+          <label for="subtopics">
+            Sub-Topics to Cover
+            <span class="field-badge">Focus Areas</span>
+          </label>
+          <textarea id="subtopics" rows="3"
+            placeholder="List the sub-topics or concepts you want covered, one per line or comma-separated.
+Examples:
+• Light-dependent reactions
+• Calvin cycle / dark reactions
+• Role of chlorophyll
+• Factors affecting rate of photosynthesis"></textarea>
+          <div class="field-hint">Gemini will prioritise questions from these sub-topics. Leave blank to cover the full chapter.</div>
+        </div>
+
+        <!-- Exclusions -->
+        <div class="form-full">
+          <label for="exclusions">
+            Topics / Areas to Exclude
+            <span class="field-badge">Do Not Include</span>
+          </label>
+          <textarea id="exclusions" rows="2"
+            placeholder="List anything you want excluded — sub-topics, question formats, specific terms, etc.
+Examples:
+• Do not include numerical problems
+• Skip derivations of formulas
+• No questions on historical background"></textarea>
+          <div class="field-hint">These will be explicitly excluded from the generated paper.</div>
+        </div>
+
+        <!-- Custom Instructions -->
+        <div class="form-full">
+          <label for="custom_instructions">
+            Custom Instructions
+            <span class="field-badge">Special Requirements</span>
+          </label>
+          <textarea id="custom_instructions" rows="3"
+            placeholder="Any specific requirements about content, style, or format. Examples:
+• Include at least 2 diagram-based questions
+• All MCQs should be assertion-reason type (CBSE style)
+• Medium questions must involve calculations
+• Focus on application over theory
+• Make questions bilingual (Hindi/English)
+• Use real-world / current affairs examples where possible"></textarea>
+          <div class="field-hint">Free-form instructions that override or supplement the defaults.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── QUESTION BREAKDOWN ─────────────────── -->
+    <div class="card">
+      <div class="card-title">Question Breakdown</div>
+      <div class="slider-group">
+
+        <div class="slider-row">
+          <label>
+            MCQ Questions
+            <span class="slider-label-sub">(1 mark each)</span>
+          </label>
+          <input type="range" id="mcq" min="0" max="20" value="5"
+                 oninput="updateSlider('mcq', this.value)" />
+          <span class="slider-value" id="mcq_val">5</span>
+        </div>
+
+        <div class="slider-row">
+          <label>
+            Short Answer
+            <span class="slider-label-sub">(2 marks each)</span>
+          </label>
+          <input type="range" id="marks_2" min="0" max="20" value="3"
+                 oninput="updateSlider('marks_2', this.value)" />
+          <span class="slider-value" id="marks_2_val">3</span>
+        </div>
+
+        <div class="slider-row">
+          <label>
+            Medium Answer
+            <span class="slider-label-sub">(3 marks each)</span>
+          </label>
+          <input type="range" id="marks_3" min="0" max="25" value="3"
+                 oninput="updateSlider('marks_3', this.value)" />
+          <span class="slider-value" id="marks_3_val">3</span>
+        </div>
+
+        <div class="slider-row">
+          <label>
+            Long Answer
+            <span class="slider-label-sub">(5 marks each)</span>
+          </label>
+          <input type="range" id="marks_5" min="0" max="25" value="2"
+                 oninput="updateSlider('marks_5', this.value)" />
+          <span class="slider-value" id="marks_5_val">2</span>
+        </div>
+
+      </div>
+
+      <!-- Marks summary chips -->
+      <div class="marks-summary">
+        <div class="mark-chip">
+          <div class="mark-chip-val" id="chip_mcq">5</div>
+          <div class="mark-chip-lbl">MCQ × 1</div>
+        </div>
+        <div class="mark-chip">
+          <div class="mark-chip-val" id="chip_m2">6</div>
+          <div class="mark-chip-lbl">Short × 2</div>
+        </div>
+        <div class="mark-chip">
+          <div class="mark-chip-val" id="chip_m3">9</div>
+          <div class="mark-chip-lbl">Medium × 3</div>
+        </div>
+        <div class="mark-chip">
+          <div class="mark-chip-val" id="chip_m5">10</div>
+          <div class="mark-chip-lbl">Long × 5</div>
+        </div>
+      </div>
+
+      <!-- Total marks display -->
+      <div style="margin-top:14px; padding:10px 16px; border:1px solid var(--border); border-radius:var(--radius); display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">Estimated Total Marks</span>
+        <span style="font-family:var(--mono); font-size:22px; font-weight:700;" id="total_marks_display">30</span>
+      </div>
+    </div>
+
+    <!-- ── GENERATE BUTTON ────────────────────── -->
+    <div class="card" style="padding:20px 32px;">
+      <button class="btn-generate" id="btn_generate" onclick="generateAssignment()">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        Generate Assignment &amp; Export PDF
+      </button>
+
+      <!-- Status loader -->
+      <div class="status-box" id="status_box">
+        <div class="spinner"></div>
+        <div class="status-steps">
+          <span>Generating assignment — sending to Gemini AI, please wait (30–60 s)&hellip;</span>
+        </div>
+      </div>
+
+      <!-- Error box — structured display -->
+      <div class="error-box" id="error_box">
+        <div class="error-header">
+          <span class="error-icon" id="error_icon">⚠️</span>
+          <span class="error-badge" id="error_badge">Error</span>
+        </div>
+        <p class="error-msg"  id="error_msg"></p>
+        <p class="error-hint" id="error_hint"></p>
+      </div>
+    </div>
+
+    <!-- ── RESULT PANEL ────────────────────────── -->
+    <div class="result-panel" id="result_panel">
+      <div class="card-title" style="margin-bottom:16px;">Generated Assignment</div>
+
+      <div class="result-meta">
+        <div class="meta-item">
+          <div class="key">Title</div>
+          <div class="val" id="res_title">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="key">Subject</div>
+          <div class="val" id="res_subject">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="key">Total Marks</div>
+          <div class="val" id="res_marks">—</div>
+        </div>
+      </div>
+
+      <a id="download_pdf" class="btn-download" href="#" download="assignment.pdf">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF
+      </a>
+
+      <a id="download_docx" class="btn-download" href="#" download="assignment.docx"
+         style="display:none; margin-top:8px; background:rgba(255,255,255,0.06);
+                border-color:rgba(255,255,255,0.2); font-size:13px; padding:10px 20px;">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Download Editable DOCX
+      </a>
+    </div>
+
+    <!-- ── SITE FOOTER ─────────────────────────── -->
+    <footer class="site-footer">
+      Powered by Google Gemini · PDF rendered with ReportLab · Built with Flask
+    </footer>
+
+  </div><!-- /.page-wrapper -->
+
+  <script>
+    /* ─────────────────────────────────────────────
+       Slider update
+    ───────────────────────────────────────────── */
+    function updateSlider(id, val) {
+      document.getElementById(id + '_val').textContent = val;
+      updateChips();
+    }
+
+    function updateChips() {
+      const mcq = +(document.getElementById('mcq')?.value || 0);
+      const m2  = +(document.getElementById('marks_2')?.value || 0);
+      const m3  = +(document.getElementById('marks_3')?.value || 0);
+      const m5  = +(document.getElementById('marks_5')?.value || 0);
+
+      document.getElementById('chip_mcq').textContent = mcq;
+      document.getElementById('chip_m2').textContent  = m2 * 2;
+      document.getElementById('chip_m3').textContent  = m3 * 3;
+      document.getElementById('chip_m5').textContent  = m5 * 5;
+      document.getElementById('total_marks_display').textContent = mcq + (m2 * 2) + (m3 * 3) + (m5 * 5);
+    }
+    updateChips();
+
+    /* Auto-hide API key notice if key is already configured */
+    fetch('/health').then(r => r.json()).then(d => {
+      if (d.api_key_set) {
+        const notice = document.getElementById('api_notice');
+        if (notice) notice.style.display = 'none';
+      }
+    }).catch(() => {});
+
+    /* ─────────────────────────────────────────────
+       Generate
+    ───────────────────────────────────────────── */
+    async function generateAssignment() {
+      const btn       = document.getElementById('btn_generate');
+      const statusBox = document.getElementById('status_box');
+      const errorBox  = document.getElementById('error_box');
+      const resultPanel = document.getElementById('result_panel');
+
+      // Validation
+      const topic = document.getElementById('topic').value.trim();
+      if (!topic) {
+        showError('Please enter a topic before generating.');
+        return;
+      }
+
+      const mcq    = +document.getElementById('mcq').value;
+      const marks2 = +document.getElementById('marks_2').value;
+      const marks3 = +document.getElementById('marks_3').value;
+      const marks5 = +document.getElementById('marks_5').value;
+
+      if (mcq + marks2 + marks3 + marks5 === 0) {
+        showError('Please configure at least one question using the sliders.');
+        return;
+      }
+
+      // UI state: loading
+      btn.disabled   = true;
+      errorBox.classList.remove('visible');
+      resultPanel.classList.remove('visible');
+      statusBox.classList.add('visible');
+
+      const payload = {
+        class_level: document.getElementById('class_level').value,
+        topic,
+        subtopics:           document.getElementById('subtopics').value.trim(),
+        exclusions:          document.getElementById('exclusions').value.trim(),
+        custom_instructions: document.getElementById('custom_instructions').value.trim(),
+        mcq,
+        marks_2: marks2,
+        marks_1: marks2,
+        marks_3: marks3,
+        marks_5: marks5,
+        difficulty_level: document.querySelector('input[name="difficulty"]:checked').value,
+      };
+
+      try {
+        const res  = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showError(data);
+          return;
+        }
+
+        // Show result
+        document.getElementById('res_title').textContent   = data.title        || '-';
+        document.getElementById('res_subject').textContent = data.subject       || '-';
+        document.getElementById('res_marks').textContent   = data.total_marks   || '-';
+
+        // PDF download
+        const pdfBytes = Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0));
+        const pdfBlob  = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfLink  = document.getElementById('download_pdf');
+        pdfLink.href     = URL.createObjectURL(pdfBlob);
+        pdfLink.download = (data.title || 'assignment').replace(/[^a-z0-9]+/gi, '_') + '.pdf';
+
+        // DOCX download (shown only if server generated it)
+        const docxLink = document.getElementById('download_docx');
+        if (data.docx_base64) {
+          const docxBytes = Uint8Array.from(atob(data.docx_base64), c => c.charCodeAt(0));
+          const docxBlob  = new Blob([docxBytes], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          });
+          docxLink.href     = URL.createObjectURL(docxBlob);
+          docxLink.download = (data.title || 'assignment').replace(/[^a-z0-9]+/gi, '_') + '.docx';
+          docxLink.style.display = '';
+        } else {
+          docxLink.style.display = 'none';
+        }
+
+        resultPanel.classList.add('visible');
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        showError({
+          error: 'Network error — could not reach the server: ' + err.message,
+          error_code: 'TIMEOUT',
+          hint: 'Make sure Flask is running (python app.py) and check your internet connection.',
+        });
+      } finally {
+        btn.disabled = false;
+        statusBox.classList.remove('visible');
+      }
+    }
+
+    function showError(data) {
+      const isStr = typeof data === 'string';
+      const msg   = isStr ? data : (data.error      || 'Unknown error.');
+      const hint  = isStr ? ''   : (data.hint       || '');
+      const code  = isStr ? 'VALIDATION' : (data.error_code || 'UNKNOWN');
+
+      const MAP = {
+        RATE_LIMIT:    { icon: '⏳', label: 'Free-Tier Rate Limit' },
+        INVALID_KEY:   { icon: '🔑', label: 'Invalid API Key' },
+        JSON_PARSE:    { icon: '📦', label: 'Response Parse Error' },
+        TIMEOUT:       { icon: '🔌', label: 'Network / Timeout' },
+        PDF_ERROR:     { icon: '📄', label: 'PDF Render Error' },
+        SERVICE_DOWN:  { icon: '☁️', label: 'Service Unavailable' },
+        MISSING_TOPIC: { icon: '✏️', label: 'Missing Input' },
+        NO_QUESTIONS:  { icon: '✏️', label: 'Missing Input' },
+        VALIDATION:    { icon: '✏️', label: 'Validation Error' },
+        UNKNOWN:       { icon: '⚠️', label: 'Unexpected Error' },
+      };
+      const m = MAP[code] || MAP.UNKNOWN;
+
+      document.getElementById('error_icon').textContent  = m.icon;
+      document.getElementById('error_badge').textContent = m.label;
+      document.getElementById('error_msg').textContent   = msg;
+      document.getElementById('error_hint').textContent  = hint ? '💡 Fix: ' + hint : '';
+      document.getElementById('error_box').classList.add('visible');
+    }
+
+    /* ─────────────────────────────────────────────
+       Difficulty card selection highlight
+    ───────────────────────────────────────────── */
+    function updateDiffDesc() {
+      document.querySelectorAll('.diff-card').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        card.classList.toggle('selected', radio.checked);
+      });
+    }
+    // Init highlight
+    updateDiffDesc();
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# Environment & Secret Keys
+.env
+.env.local
+.env.*.local
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary generated test outputs
+sample_output.pdf
+test_font.pdf
+test_custom_font.pdf
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
