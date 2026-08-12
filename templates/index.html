@@ -1138,6 +1138,7 @@ Examples:
     }
 
     function showError(data) {
+      console.error('[Assignment Generator Error]:', data);
       const isStr = typeof data === 'string';
       const msg   = isStr ? data : (data.error      || 'Unknown error.');
       const hint  = isStr ? ''   : (data.hint       || '');

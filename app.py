@@ -964,6 +964,8 @@ def classify_error(e: Exception):
 @app.route("/generate", methods=["POST"])
 @app.route("/api/generate", methods=["POST"])
 def _handle_generate():
+    import sys
+    print("[Assignment-Generator] Received POST /generate request", flush=True)
     try:
         body = request.get_json(force=True)
         class_level         = body.get("class_level", "Class 10")
@@ -988,10 +990,13 @@ def _handle_generate():
 
         prompt = build_prompt(class_level, topic, marks_2, marks_3, marks_5, mcq,
                               difficulty_level, subtopics, exclusions, custom_instructions)
+        print("[Assignment-Generator] Calling Gemini API...", flush=True)
         data = call_gemini(prompt)
+        print("[Assignment-Generator] Gemini OK. Building PDF...", flush=True)
 
         pdf_bytes  = build_pdf(data)
         pdf_b64    = base64.b64encode(pdf_bytes).decode("utf-8")
+        print("[Assignment-Generator] PDF OK.", flush=True)
 
         docx_b64 = ""
         if DOCX_OK:
