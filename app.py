@@ -1,4 +1,4 @@
-import os
+ import os
 import io
 import json
 import re
@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, jsonify
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+
 
 # ReportLab
 from reportlab.lib.pagesizes import A4
