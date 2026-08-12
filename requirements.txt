@@ -11,3 +11,5 @@ python-docx>=1.1.0
 
 # Environment Configuration
 python-dotenv>=1.0.0
+# WSGI Production Server
+gunicorn>=21.2.0
