@@ -198,42 +198,57 @@ def _format_subparts(text: str) -> str:
 
 
 def _format_physics_math(text: str) -> str:
-    """Converts mu0, pi, theta, subscripts and superscripts to clean mathematical notation."""
-    # 1. mu0 / mu_0 / \mu0 / \mu_0 / μ0
-    text = re.sub(r'\\?mu_?0|&mu;_?0|μ0', 'μ₀', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?mu\b|&mu;', 'μ', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?pi\b|&pi;', 'π', text, flags=re.IGNORECASE)
+    """Converts physics math & Greek symbols into ReportLab Symbol font and HTML tags for 100% OS-agnostic rendering."""
+    # mu0 / mu_0 / μ0 / µ0 / µ₀ / μ₀
+    text = re.sub(r'\\?mu_?0|&mu;_?0|[μµ]_?0|[μµ]₀', '<font name="Symbol">m</font><sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?mu\b|&mu;|[μµ]', '<font name="Symbol">m</font>', text, flags=re.IGNORECASE)
 
-    # 2. theta / \theta with or without subscripts (e.g. theta_1, theta_2, theta_a)
-    text = re.sub(r'\\?theta_?([0-9a-zA-Z]+)\b', r'θ<sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?theta\b|&theta;', 'θ', text, flags=re.IGNORECASE)
+    # pi
+    text = re.sub(r'\\?pi_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">p</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?pi\b|&pi;|π', '<font name="Symbol">p</font>', text, flags=re.IGNORECASE)
 
-    # 3. Other Greek symbols with optional subscripts
-    text = re.sub(r'\\?phi_?([0-9a-zA-Z]+)\b', r'φ<sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?phi\b', 'φ', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Phi\b', 'Φ', text)
+    # theta
+    text = re.sub(r'\\?theta_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">q</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?theta\b|&theta;|θ', '<font name="Symbol">q</font>', text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?alpha_?([0-9a-zA-Z]+)\b', r'α<sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?alpha\b|&alpha;', 'α', text, flags=re.IGNORECASE)
+    # alpha
+    text = re.sub(r'\\?alpha_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">a</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?alpha\b|&alpha;|α', '<font name="Symbol">a</font>', text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?beta_?([0-9a-zA-Z]+)\b', r'β<sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?beta\b|&beta;', 'β', text, flags=re.IGNORECASE)
+    # beta
+    text = re.sub(r'\\?beta_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">b</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?beta\b|&beta;|β', '<font name="Symbol">b</font>', text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?gamma_?([0-9a-zA-Z]+)\b', r'γ<sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?gamma\b|&gamma;', 'γ', text, flags=re.IGNORECASE)
+    # gamma
+    text = re.sub(r'\\?gamma_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">g</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?gamma\b|&gamma;|γ', '<font name="Symbol">g</font>', text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?omega\b|&omega;', 'ω', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Omega\b|&Omega;|ohms?\b', 'Ω', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Delta\b|&Delta;', 'Δ', text)
-    text = re.sub(r'\\?delta\b|&delta;', 'δ', text)
-    text = re.sub(r'\\?lambda\b|&lambda;', 'λ', text)
-    text = re.sub(r'\\?rho\b|&rho;', 'ρ', text)
-    text = re.sub(r'\\?sigma\b|&sigma;', 'σ', text)
-    text = re.sub(r'\\?epsilon_?0|\\?eps_?0', 'ε₀', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?epsilon\b|\\?eps\b', 'ε', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?tau\b', 'τ', text)
+    # phi
+    text = re.sub(r'\\?phi_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">f</font><sub>\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?phi\b|ϕ|φ', '<font name="Symbol">f</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Phi\b|Φ', '<font name="Symbol">F</font>', text)
 
-    # General Subscripts & Superscripts
+    # other Greek symbols
+    text = re.sub(r'\\?omega\b|&omega;|ω', '<font name="Symbol">w</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Omega\b|&Omega;|ohms?\b|Ω', '<font name="Symbol">W</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Delta\b|&Delta;|Δ', '<font name="Symbol">D</font>', text)
+    text = re.sub(r'\\?delta\b|&delta;|δ', '<font name="Symbol">d</font>', text)
+    text = re.sub(r'\\?lambda\b|&lambda;|λ', '<font name="Symbol">l</font>', text)
+    text = re.sub(r'\\?rho\b|&rho;|ρ', '<font name="Symbol">r</font>', text)
+    text = re.sub(r'\\?sigma\b|&sigma;|σ', '<font name="Symbol">s</font>', text)
+    text = re.sub(r'\\?epsilon_?0|\\?eps_?0|ε_?0|ε₀', '<font name="Symbol">e</font><sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?epsilon\b|\\?eps\b|ε', '<font name="Symbol">e</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?tau\b|τ', '<font name="Symbol">t</font>', text)
+
+    # Convert Unicode subscripts & superscripts
+    sub_map = {'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ᵢ':'i','ₓ':'x','ᵧ':'y'}
+    sup_map = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','ⁿ':'n','⁻':'-','⁺':'+'}
+    for ch, val in sub_map.items():
+        text = text.replace(ch, f'<sub>{val}</sub>')
+    for ch, val in sup_map.items():
+        text = text.replace(ch, f'<sup>{val}</sup>')
+
+    # Subscripts & Superscripts
     text = re.sub(r'\b([A-Za-z]+)_([0-9a-zA-Z]+)\b', r'\1<sub>\2</sub>', text)
     text = re.sub(r'\b([A-Za-z])\^?([0-9])\b', r'\1<sup>\2</sup>', text)
 
@@ -767,42 +782,6 @@ def _build_story(data: dict, styles: dict) -> list:
             items.append(Spacer(1, 4 * mm))
             story.append(KeepTogether(items))
 
-    # Marking Scheme
-    story.append(PageBreak())
-    story.append(Spacer(1, 2 * mm))
-    story.append(HRFlowable(width=W, thickness=1.5, color=black))
-    story.append(Paragraph("MARKING SCHEME", styles["ms_head"]))
-    story.append(Paragraph(
-        f"{_sanitize(data.get('subject',''))}  |  "
-        f"{data.get('class_level','')}  |  Total Marks: {total_marks}",
-        styles["meta"]
-    ))
-    story.append(Spacer(1, 2 * mm))
-    story.append(HRFlowable(width=W, thickness=1.5, color=black))
-    story.append(Spacer(1, 4 * mm))
-
-    for entry in data.get("marking_scheme", []):
-        qn        = entry.get("question_number", "?")
-        marks     = entry.get("marks", "?")
-        q_sum     = _prep(entry.get("question_summary", ""))
-        ans_key   = _prep(entry.get("answer_key", ""))
-        breakdown = [_prep(s) for s in entry.get("mark_breakdown", [])]
-        q_type    = entry.get("type", "")
-
-        story.append(Paragraph(
-            f"<b>Q{qn}.</b> [{marks} {'Mark' if marks == 1 else 'Marks'}]"
-            f" <i>({q_type})</i>  --  {q_sum}",
-            styles["ms_q"]
-        ))
-        if ans_key:
-            story.append(Paragraph(f"<b>Answer / Key:</b> {ans_key}", styles["ms_answer"]))
-        if breakdown:
-            story.append(Paragraph("<b>Mark Breakdown:</b>", styles["ms_answer"]))
-            for step in breakdown:
-                story.append(Paragraph(f"* {step}", styles["ms_step"]))
-        story.append(HRFlowable(width=W, thickness=0.3, color=black))
-        story.append(Spacer(1, 2 * mm))
-
     return story
 
 
@@ -910,45 +889,6 @@ def build_docx(data: dict) -> bytes:
                     op.paragraph_format.space_after  = Pt(2)
 
             doc.add_paragraph()
-
-    # Marking scheme
-    doc.add_page_break()
-    mh = doc.add_heading("MARKING SCHEME", 0)
-    mh.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    mi = doc.add_paragraph(
-        f"{data.get('subject','')}  |  "
-        f"{data.get('class_level','')}  |  Total Marks: {total_marks}"
-    )
-    mi.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    for entry in data.get("marking_scheme", []):
-        qn    = entry.get("question_number", "?")
-        marks = entry.get("marks", "?")
-        q_sum = entry.get("question_summary", "")
-        ans   = entry.get("answer_key", "")
-        bd    = entry.get("mark_breakdown", [])
-        q_type= entry.get("type", "")
-
-        p = doc.add_paragraph()
-        run = p.add_run(
-            f"Q{qn}. [{marks} {'Mark' if marks == 1 else 'Marks'}] "
-            f"({q_type})  --  {q_sum}"
-        )
-        run.bold = True
-
-        if ans:
-            ap = doc.add_paragraph(f"Answer / Key: {ans}")
-            ap.paragraph_format.left_indent = Cm(0.5)
-
-        if bd:
-            bp = doc.add_paragraph("Mark Breakdown:")
-            if bp.runs: bp.runs[0].bold = True
-            bp.paragraph_format.left_indent = Cm(0.5)
-            for step in bd:
-                sp = doc.add_paragraph(f"* {step}")
-                sp.paragraph_format.left_indent = Cm(1)
-
-        doc.add_paragraph("-" * 60)
 
     buf = io.BytesIO()
     doc.save(buf)
