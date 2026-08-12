@@ -1006,8 +1006,6 @@ def classify_error(e: Exception):
 # Flask routes
 # ─────────────────────────────────────────────
 @app.route("/")
-@app.route("/api")
-@app.route("/api/index")
 def index():
     return render_template("index.html")
 
@@ -1018,8 +1016,6 @@ def favicon():
 
 
 @app.route("/generate", methods=["POST"])
-@app.route("/api/generate", methods=["POST"])
-@app.route("/api/index/generate", methods=["POST"])
 def generate():
     try:
         body = request.get_json(force=True)
