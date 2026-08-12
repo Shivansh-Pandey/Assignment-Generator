@@ -9,7 +9,6 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
-
 # ReportLab
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
