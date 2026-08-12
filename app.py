@@ -490,6 +490,7 @@ Mandatory rules:
 - marking_scheme must cover EVERY question.
 - JSON must be syntactically valid.
 - All content must be from {class_level} NCERT/CBSE syllabus for topic "{topic}".
+- Be concise and direct in question formulations and marking breakdowns for fast generation.
 """.strip()
 
 
@@ -519,7 +520,7 @@ def call_gemini(prompt: str) -> dict:
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=16384,
+                max_output_tokens=4096,
                 response_mime_type="application/json",
             ),
         )
@@ -540,7 +541,7 @@ def call_gemini(prompt: str) -> dict:
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.3,
-            max_output_tokens=16384,
+            max_output_tokens=4096,
         ),
     )
     if not response2 or not response2.text:
