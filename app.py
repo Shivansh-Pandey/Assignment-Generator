@@ -520,15 +520,15 @@ def call_gemini(prompt: str) -> dict:
     if not client:
         raise ValueError("GEMINI_API_KEY_MISSING: API key not set in environment variables.")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
 
     try:
         response = client.models.generate_content(
             model=model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
-                temperature=0.4,
-                max_output_tokens=4096,
+                temperature=0.3,
+                max_output_tokens=3072,
                 response_mime_type="application/json",
             ),
         )
@@ -541,26 +541,29 @@ def call_gemini(prompt: str) -> dict:
                 repaired = re.sub(r',\s*([\}\]])', r'\1', cleaned)
                 return json.loads(repaired, strict=False)
     except Exception as e:
-        print(f"[Gemini Call 1 Warning] {e}")
+        print(f"[Gemini Primary Call Warning] {e}")
+        # Single fast fallback without response_mime_type constraint
+        try:
+            response2 = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=3072,
+                ),
+            )
+            if response2 and response2.text:
+                cleaned2 = _clean_json_string(response2.text.strip())
+                try:
+                    return json.loads(cleaned2)
+                except Exception:
+                    repaired2 = re.sub(r',\s*([\}\]])', r'\1', cleaned2)
+                    return json.loads(repaired2, strict=False)
+        except Exception as e2:
+            print(f"[Gemini Fallback Call Warning] {e2}")
+            raise ValueError(f"GEMINI_CALL_FAILED: {e2}")
 
-    # Fallback call without strict response_mime_type constraint if first call failed
-    response2 = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.3,
-            max_output_tokens=4096,
-        ),
-    )
-    if not response2 or not response2.text:
-        raise ValueError("GEMINI_EMPTY_RESPONSE: The AI returned an empty response. Try simplifying the topic or reducing question counts.")
-
-    cleaned2 = _clean_json_string(response2.text.strip())
-    try:
-        return json.loads(cleaned2)
-    except Exception:
-        repaired2 = re.sub(r',\s*([\}\]])', r'\1', cleaned2)
-        return json.loads(repaired2, strict=False)
+    raise ValueError("GEMINI_EMPTY_RESPONSE: The AI returned an empty response. Try simplifying the topic or reducing question counts.")
 
 
 
