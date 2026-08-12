@@ -1056,7 +1056,40 @@ Examples:
           body: JSON.stringify(payload),
         });
 
-        const data = await res.json();
+        let data;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            data = await res.json();
+          } catch (parseErr) {
+            data = {
+              error: 'Invalid JSON response received from server.',
+              error_code: 'JSON_PARSE',
+              hint: 'The server returned malformed JSON data.'
+            };
+          }
+        } else {
+          const text = await res.text();
+          if (res.status === 504 || text.includes('TIMEOUT') || text.includes('Task timed out')) {
+            data = {
+              error: 'Server Execution Timeout (Vercel limit reached).',
+              error_code: 'TIMEOUT',
+              hint: 'Vercel serverless functions time out after 10-60 seconds. Try reducing question counts or topic length.'
+            };
+          } else if (res.status === 401 || text.includes('GEMINI_API_KEY')) {
+            data = {
+              error: 'Gemini API Key is missing or invalid on Vercel.',
+              error_code: 'INVALID_KEY',
+              hint: 'Add GEMINI_API_KEY to your Vercel Project Settings -> Environment Variables and redeploy.'
+            };
+          } else {
+            data = {
+              error: `Server Error (HTTP ${res.status})`,
+              error_code: 'SERVICE_DOWN',
+              hint: 'Ensure GEMINI_API_KEY is configured in Vercel Environment Variables and check your Vercel deployment logs.'
+            };
+          }
+        }
 
         if (!res.ok || data.error) {
           showError(data);
@@ -1096,7 +1129,7 @@ Examples:
         showError({
           error: 'Network error — could not reach the server: ' + err.message,
           error_code: 'TIMEOUT',
-          hint: 'Make sure Flask is running (python app.py) and check your internet connection.',
+          hint: 'Check your internet connection and verify Flask or Vercel server status.',
         });
       } finally {
         btn.disabled = false;

@@ -509,9 +509,11 @@ def call_gemini(prompt: str) -> dict:
     if not client:
         raise ValueError("GEMINI_API_KEY_MISSING: API key not set in .env file.")
 
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4,
@@ -532,7 +534,7 @@ def call_gemini(prompt: str) -> dict:
 
     # Fallback call without strict response_mime_type constraint if first call failed
     response2 = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model=model_name,
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.3,
@@ -945,6 +947,8 @@ def classify_error(e: Exception):
 # ─────────────────────────────────────────────
 # Flask routes & Universal Catch-All Handler
 # ─────────────────────────────────────────────
+@app.route("/generate", methods=["POST"])
+@app.route("/api/generate", methods=["POST"])
 def _handle_generate():
     try:
         body = request.get_json(force=True)
@@ -997,6 +1001,14 @@ def _handle_generate():
         traceback.print_exc()
         code, msg, hint, status = classify_error(e)
         return jsonify({"error": msg, "error_code": code, "hint": hint}), status
+
+
+@app.errorhandler(Exception)
+def handle_global_exception(e):
+    import traceback
+    traceback.print_exc()
+    code, msg, hint, status = classify_error(e)
+    return jsonify({"error": msg, "error_code": code, "hint": hint}), status
 
 
 @app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
