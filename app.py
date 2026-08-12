@@ -62,8 +62,15 @@ app = Flask(__name__)
 # ─────────────────────────────────────────────
 # Gemini client
 # ─────────────────────────────────────────────
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+def get_client():
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+    try:
+        return genai.Client(api_key=api_key)
+    except Exception as err:
+        print(f"[GenAI Client Init Error] {err}")
+        return None
 
 # ─────────────────────────────────────────────
 # PDF layout constants
@@ -509,8 +516,9 @@ def _clean_json_string(raw: str) -> str:
 # Gemini
 # ─────────────────────────────────────────────
 def call_gemini(prompt: str) -> dict:
+    client = get_client()
     if not client:
-        raise ValueError("GEMINI_API_KEY_MISSING: API key not set in .env file.")
+        raise ValueError("GEMINI_API_KEY_MISSING: API key not set in environment variables.")
 
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
@@ -1026,7 +1034,8 @@ def catch_all(path):
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "api_key_set": bool(GEMINI_API_KEY)})
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    return jsonify({"status": "ok", "api_key_set": bool(key)})
 
 
 if __name__ == "__main__":
