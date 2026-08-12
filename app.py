@@ -1003,20 +1003,9 @@ def classify_error(e: Exception):
 
 
 # ─────────────────────────────────────────────
-# Flask routes
+# Flask routes & Universal Catch-All Handler
 # ─────────────────────────────────────────────
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@app.route("/favicon.ico")
-def favicon():
-    return "", 204
-
-
-@app.route("/generate", methods=["POST"])
-def generate():
+def _handle_generate():
     try:
         body = request.get_json(force=True)
         class_level         = body.get("class_level", "Class 10")
@@ -1068,6 +1057,16 @@ def generate():
         traceback.print_exc()
         code, msg, hint, status = classify_error(e)
         return jsonify({"error": msg, "error_code": code, "hint": hint}), status
+
+
+@app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/<path:path>", methods=["GET", "POST"])
+def catch_all(path):
+    if "generate" in path and request.method == "POST":
+        return _handle_generate()
+    if "favicon" in path:
+        return "", 204
+    return render_template("index.html")
 
 
 @app.route("/health")
