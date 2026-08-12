@@ -512,7 +512,7 @@ def call_gemini(prompt: str) -> dict:
     if not client:
         raise ValueError("GEMINI_API_KEY_MISSING: API key not set in .env file.")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     try:
         response = client.models.generate_content(
