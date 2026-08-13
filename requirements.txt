@@ -1,5 +1,6 @@
 # Core Web Framework
 flask>=3.0.0
+gunicorn>=21.0.0
 
 # AI Service Integration
 google-genai>=0.8.0

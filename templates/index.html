@@ -1056,6 +1056,20 @@ Examples:
           body: JSON.stringify(payload),
         });
 
+        // Guard: if Vercel returns an HTML error page (e.g. timeout / 504),
+        // res.json() would throw "<!DOCTYPE ..." is not valid JSON.
+        // Check content-type first so we give a meaningful error.
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          // Almost always a Vercel function timeout on the free (Hobby) plan.
+          showError({
+            error: `Server returned an unexpected response (HTTP ${res.status}). This usually means the request timed out on the hosting platform.`,
+            error_code: 'TIMEOUT',
+            hint: 'Vercel Hobby plan limits functions to 10 seconds. Gemini AI needs 30–90 s. Upgrade to Vercel Pro, or host on Railway / Render which have no timeout.',
+          });
+          return;
+        }
+
         const data = await res.json();
 
         if (!res.ok || data.error) {
@@ -1093,10 +1107,17 @@ Examples:
         resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
       } catch (err) {
+        // This fires when fetch itself fails (offline) or if res.json() throws
+        // (e.g. Vercel returned HTML but content-type was wrongly set to json).
+        const isHtmlErr = err.message && err.message.includes('<!DOCTYPE');
         showError({
-          error: 'Network error — could not reach the server: ' + err.message,
+          error: isHtmlErr
+            ? `Server returned an HTML error page instead of JSON. The request likely timed out on Vercel's free plan (10-second limit).`
+            : 'Network error — could not reach the server: ' + err.message,
           error_code: 'TIMEOUT',
-          hint: 'Make sure Flask is running (python app.py) and check your internet connection.',
+          hint: isHtmlErr
+            ? 'Vercel Hobby plan limits serverless functions to 10 s. Gemini AI needs 30–90 s. Upgrade to Vercel Pro, or host on Railway / Render (free, no timeout limit).'
+            : 'Check your internet connection. If on Vercel, make sure your GEMINI_API_KEY environment variable is set in the Vercel project settings.',
         });
       } finally {
         btn.disabled = false;
