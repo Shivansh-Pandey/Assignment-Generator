@@ -61,11 +61,7 @@ app = Flask(__name__)
 # Gemini client
 # ─────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-# 300-second HTTP timeout — large assignments (90 questions) can take 3-5 minutes
-client = genai.Client(
-    api_key=GEMINI_API_KEY,
-    http_options={"timeout": 300},
-) if GEMINI_API_KEY else None
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # Startup diagnostics (visible in Render / Heroku logs)
 print(f"[Startup] Platform: {os.name} | Python CWD: {os.getcwd()}")
