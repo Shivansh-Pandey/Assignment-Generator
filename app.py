@@ -273,13 +273,15 @@ def _format_multiplication(text: str) -> str:
 
 
 def _smart_xml_escape(text: str) -> str:
-    """Escapes & < > except for valid ReportLab HTML tags (<sub>, <super>, <sup>, <b>, <i>, <br/>)."""
+    """Escapes & < > except for valid ReportLab HTML tags
+    (<sub>, <sup>, <b>, <i>, <br/>, <font name="...">)."""
     tags = []
     def _save_tag(m):
         tags.append(m.group(0))
         return f"___TAG_{len(tags)-1}___"
 
-    pattern = r'</?(?:sub|super|sup|b|i|br\s*/?)>'
+    # Preserve all ReportLab-supported inline markup tags including <font name="Symbol">
+    pattern = r'</?(?:sub|super|sup|b|i|br\s*/?|font(?:\s[^>]*)?)>'
     text = re.sub(pattern, _save_tag, text, flags=re.IGNORECASE)
 
     text = text.replace('&', '&amp;')
