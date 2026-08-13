@@ -3,8 +3,8 @@ services:
     name: assignment-agent
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --timeout 120 --workers 1
+    startCommand: gunicorn app:app --timeout 120 --workers 1 --worker-class sync
     envVars:
       - key: GEMINI_API_KEY
-        sync: false          # you'll paste the value in the Render dashboard
+        sync: false
     autoDeploy: true

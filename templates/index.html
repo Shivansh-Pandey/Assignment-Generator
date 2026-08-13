@@ -996,7 +996,7 @@ Examples:
     updateChips();
 
     /* Auto-hide API key notice if key is already configured */
-    fetch('/health').then(r => r.json()).then(d => {
+    fetch('/status').then(r => r.json()).then(d => {
       if (d.api_key_set) {
         const notice = document.getElementById('api_notice');
         if (notice) notice.style.display = 'none';

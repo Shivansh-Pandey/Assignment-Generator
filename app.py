@@ -63,6 +63,11 @@ app = Flask(__name__)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
+# Startup diagnostics (visible in Render / Heroku logs)
+print(f"[Startup] Platform: {os.name} | Python CWD: {os.getcwd()}")
+print(f"[Startup] GEMINI_API_KEY set: {bool(GEMINI_API_KEY)}")
+
+
 # ─────────────────────────────────────────────
 # PDF layout constants
 # ─────────────────────────────────────────────
@@ -75,6 +80,8 @@ MARGIN_B = 22 * mm
 SCHOOL_NAME = "Eicher School Faridabad"
 SCHOOL_CODE = "ESF"
 LOGO_PATH   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Logo.png")
+print(f"[Startup] Logo exists: {os.path.exists(LOGO_PATH)} | path: {LOGO_PATH}")
+
 
 _ROMAN = {
     "Class 1":"I",  "Class 2":"II",  "Class 3":"III",
@@ -515,7 +522,7 @@ def call_gemini(prompt: str) -> dict:
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=16384,
+                max_output_tokens=8192,
                 response_mime_type="application/json",
             ),
         )
@@ -536,7 +543,7 @@ def call_gemini(prompt: str) -> dict:
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.3,
-            max_output_tokens=16384,
+            max_output_tokens=8192,
         ),
     )
     if not response2 or not response2.text:
@@ -1009,8 +1016,8 @@ def catch_all(path):
     return render_template("index.html")
 
 
-@app.route("/health")
-def health():
+@app.route("/status")
+def status():
     return jsonify({"status": "ok", "api_key_set": bool(GEMINI_API_KEY)})
 
 
