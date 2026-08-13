@@ -61,7 +61,11 @@ app = Flask(__name__)
 # Gemini client
 # ─────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+# 300-second HTTP timeout — large assignments (90 questions) can take 3-5 minutes
+client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options={"timeout": 300},
+) if GEMINI_API_KEY else None
 
 # Startup diagnostics (visible in Render / Heroku logs)
 print(f"[Startup] Platform: {os.name} | Python CWD: {os.getcwd()}")
@@ -516,28 +520,64 @@ def call_gemini(prompt: str) -> dict:
     if not client:
         raise ValueError("GEMINI_API_KEY_MISSING: API key not set in .env file.")
 
+    got_response = False
+    raw_text = ""
+
+    # ── Call 1: strict JSON mode ──────────────────────────────────────────
     try:
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=8192,
+                max_output_tokens=65536,   # Max for Gemini 2.5 Flash
+                                           # 90 questions ≈ 37,500 tokens
                 response_mime_type="application/json",
             ),
         )
-        raw = response.text.strip() if response and response.text else ""
-        if raw:
-            cleaned = _clean_json_string(raw)
+        raw_text = response.text.strip() if response and response.text else ""
+
+        # Detect if Gemini stopped early due to token limit (the actual root cause
+        # of JSON parse errors: the output is cut off mid-structure)
+        try:
+            finish = response.candidates[0].finish_reason
+            if str(finish) in ("MAX_TOKENS", "2", "FinishReason.MAX_TOKENS"):
+                raise ValueError(
+                    "GEMINI_OUTPUT_TOO_LONG: The assignment is too large for one AI call. "
+                    "Reduce the number of questions (especially MCQs and 5-mark questions) and try again."
+                )
+        except (AttributeError, IndexError):
+            pass  # finish_reason unavailable — continue normally
+
+        if raw_text:
+            got_response = True
+            cleaned = _clean_json_string(raw_text)
+            # Try direct parse
             try:
                 return json.loads(cleaned)
             except Exception:
+                pass
+            # Try trailing-comma repair
+            try:
                 repaired = re.sub(r',\s*([\}\]])', r'\1', cleaned)
                 return json.loads(repaired, strict=False)
+            except Exception as je:
+                print(f"[Gemini Call 1 JSON repair failed] {je} | first 500 chars: {raw_text[:500]}")
+    except ValueError:
+        raise  # re-raise our own errors (MAX_TOKENS, GEMINI_API_KEY_MISSING, etc.)
     except Exception as e:
         print(f"[Gemini Call 1 Warning] {e}")
 
-    # Fallback call without strict response_mime_type constraint if first call failed
+    # ── Call 2: fallback WITHOUT mime-type (only if Call 1 had NO response) ──
+    # If Call 1 returned text but it was bad JSON, we do NOT retry — that would
+    # double the total latency and cause worker timeouts.
+    if got_response:
+        raise ValueError(
+            "GEMINI_JSON_PARSE: Gemini returned a response but it could not be "
+            "parsed as valid JSON. Try reducing the number of questions."
+        )
+
+    print("[Gemini] Call 1 returned no response — trying fallback call")
     response2 = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt,
@@ -547,7 +587,10 @@ def call_gemini(prompt: str) -> dict:
         ),
     )
     if not response2 or not response2.text:
-        raise ValueError("GEMINI_EMPTY_RESPONSE: The AI returned an empty response. Try simplifying the topic or reducing question counts.")
+        raise ValueError(
+            "GEMINI_EMPTY_RESPONSE: The AI returned an empty response. "
+            "Try simplifying the topic or reducing question counts."
+        )
 
     cleaned2 = _clean_json_string(response2.text.strip())
     try:
@@ -925,10 +968,16 @@ def classify_error(e: Exception):
                 "Invalid or missing Gemini API key.",
                 "Copy a fresh key from https://aistudio.google.com/app/apikey and update your .env file.", 401)
 
-    if isinstance(e, json.JSONDecodeError) or "json" in s:
+    if "gemini_output_too_long" in s:
+        return ("JSON_PARSE",
+                "The assignment is too large — Gemini hit its output limit before finishing the JSON.",
+                "Reduce the number of questions (especially MCQs and 5-mark questions) and try again.", 502)
+
+    if isinstance(e, json.JSONDecodeError) or "json" in s or "gemini_json_parse" in s:
         return ("JSON_PARSE",
                 "Gemini returned a response that couldn't be parsed.",
                 "Try reducing the number of questions or simplifying the topic, then retry.", 502)
+
 
     if any(k in s for k in ("timeout","timed out","connection","network","connectionerror")):
         return ("TIMEOUT",
