@@ -715,9 +715,12 @@ def make_callbacks(subject: str, class_level: str, topic: str,
         txt_x = MARGIN_L + LOGO_W + 7 * mm
         cx    = txt_x + (pw - txt_x - MARGIN_R - 3 * mm) / 2
 
-        # Vertical centering for 3 rows
-        total_text_h = 7 + 5.5 + 5
-        start_y = header_bot + header_h / 2 + (total_text_h / 2) * mm
+        # Vertical centering for 3 rows.
+        # total_text_h = span from baseline of row1 down to baseline of row3
+        # (row gaps: 6mm + 5.5mm = 11.5mm). Subtract 1mm so the block sits
+        # slightly below the true midpoint, giving clearance from the top border.
+        total_text_h = 6 + 5.5   # gap row1→row2 + gap row2→row3 (mm)
+        start_y = header_bot + header_h / 2 + (total_text_h / 2) * mm - 1 * mm
 
         r1y = start_y
         canvas.setFont(_TIMES_BOLD, 13)
