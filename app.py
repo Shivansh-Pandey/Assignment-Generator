@@ -251,7 +251,7 @@ def _format_subparts(text: str) -> str:
 
 
 def _format_physics_math(text: str) -> str:
-    """Converts physics math & Greek symbols into ReportLab HTML tags."""
+    """Converts physics math & Greek symbols into ReportLab HTML tags safely without corrupting English words."""
     is_ttf = _TIMES_FONT != "Times-Roman"
 
     mu_sym = "μ" if is_ttf else '<font name="Symbol">m</font>'
@@ -272,42 +272,48 @@ def _format_physics_math(text: str) -> str:
     epsilon_sym = "ε" if is_ttf else '<font name="Symbol">e</font>'
     tau_sym = "τ" if is_ttf else '<font name="Symbol">t</font>'
 
-    # mu0 / mu_0 / μ0 / µ0 / µ₀ / μ₀
-    text = re.sub(r'\\?mu_?0|&mu;_?0|[μµ]_?0|[μµ]₀', f'{mu_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?mu\b|&mu;|[μµ]', mu_sym, text, flags=re.IGNORECASE)
+    # 1. mu0 / mu_0 / μ0 / µ0 / µ₀ / μ₀
+    text = re.sub(r'(?:\\|\b)mu_?0|&mu;_?0|[μµ]_?0|[μµ]₀', f'{mu_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)mu\b|&mu;|[μµ]', mu_sym, text, flags=re.IGNORECASE)
 
-    # pi
-    text = re.sub(r'\\?pi_?([0-9a-zA-Z]+)\b', f'{pi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?pi\b|&pi;|π', pi_sym, text, flags=re.IGNORECASE)
+    # 2. pi (requires leading word boundary \b or backslash \ to avoid corrupting words like Damping, Piping, Spinning)
+    text = re.sub(r'(?:\\|\b)pi_([0-9a-zA-Z]+)\b', f'{pi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)pi([0-9])\b', f'{pi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)pi\b|&pi;|π', pi_sym, text, flags=re.IGNORECASE)
 
-    # theta
-    text = re.sub(r'\\?theta_?([0-9a-zA-Z]+)\b', f'{theta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?theta\b|&theta;|θ', theta_sym, text, flags=re.IGNORECASE)
+    # 3. theta
+    text = re.sub(r'(?:\\|\b)theta_([0-9a-zA-Z]+)\b', f'{theta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)theta([0-9])\b', f'{theta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)theta\b|&theta;|θ', theta_sym, text, flags=re.IGNORECASE)
 
-    # alpha, beta, gamma, phi, etc.
-    text = re.sub(r'\\?alpha_?([0-9a-zA-Z]+)\b', f'{alpha_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?alpha\b|&alpha;|α', alpha_sym, text, flags=re.IGNORECASE)
+    # 4. alpha, beta, gamma, phi, etc.
+    text = re.sub(r'(?:\\|\b)alpha_([0-9a-zA-Z]+)\b', f'{alpha_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)alpha([0-9])\b', f'{alpha_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)alpha\b|&alpha;|α', alpha_sym, text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?beta_?([0-9a-zA-Z]+)\b', f'{beta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?beta\b|&beta;|β', beta_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)beta_([0-9a-zA-Z]+)\b', f'{beta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)beta([0-9])\b', f'{beta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)beta\b|&beta;|β', beta_sym, text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?gamma_?([0-9a-zA-Z]+)\b', f'{gamma_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?gamma\b|&gamma;|γ', gamma_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)gamma_([0-9a-zA-Z]+)\b', f'{gamma_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)gamma([0-9])\b', f'{gamma_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)gamma\b|&gamma;|γ', gamma_sym, text, flags=re.IGNORECASE)
 
-    text = re.sub(r'\\?phi_?([0-9a-zA-Z]+)\b', f'{phi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?phi\b|ϕ|φ', phi_sym, text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Phi\b|Φ', Phi_sym, text)
+    text = re.sub(r'(?:\\|\b)phi_([0-9a-zA-Z]+)\b', f'{phi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)phi([0-9])\b', f'{phi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)phi\b|ϕ|φ', phi_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)Phi\b|Φ', Phi_sym, text)
 
-    text = re.sub(r'\\?omega\b|&omega;|ω', omega_sym, text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Omega\b|&Omega;|ohms?\b|Ω', Omega_sym, text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Delta\b|&Delta;|Δ', Delta_sym, text)
-    text = re.sub(r'\\?delta\b|&delta;|δ', delta_sym, text)
-    text = re.sub(r'\\?lambda\b|&lambda;|λ', lambda_sym, text)
-    text = re.sub(r'\\?rho\b|&rho;|ρ', rho_sym, text)
-    text = re.sub(r'\\?sigma\b|&sigma;|σ', sigma_sym, text)
-    text = re.sub(r'\\?epsilon_?0|\\?eps_?0|ε_?0|ε₀', f'{epsilon_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?epsilon\b|\\?eps\b|ε', epsilon_sym, text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?tau\b|τ', tau_sym, text)
+    text = re.sub(r'(?:\\|\b)omega\b|&omega;|ω', omega_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)Omega\b|&Omega;|ohms?\b|Ω', Omega_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)Delta\b|&Delta;|Δ', Delta_sym, text)
+    text = re.sub(r'(?:\\|\b)delta\b|&delta;|δ', delta_sym, text)
+    text = re.sub(r'(?:\\|\b)lambda\b|&lambda;|λ', lambda_sym, text)
+    text = re.sub(r'(?:\\|\b)rho\b|&rho;|ρ', rho_sym, text)
+    text = re.sub(r'(?:\\|\b)sigma\b|&sigma;|σ', sigma_sym, text)
+    text = re.sub(r'(?:\\|\b)epsilon_?0|\\?eps_?0|ε_?0|ε₀', f'{epsilon_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)epsilon\b|\\?eps\b|ε', epsilon_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:\\|\b)tau\b|τ', tau_sym, text)
 
     # Convert Unicode subscripts & superscripts
     sub_map = {'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ᵢ':'i','ₓ':'x','ᵧ':'y'}
@@ -317,9 +323,11 @@ def _format_physics_math(text: str) -> str:
     for ch, val in sup_map.items():
         text = text.replace(ch, f'<sup>{val}</sup>')
 
-    # Subscripts & Superscripts
-    text = re.sub(r'\b([A-Za-z]+)_([0-9a-zA-Z]+)\b', r'\1<sub>\2</sub>', text)
-    text = re.sub(r'\b([A-Za-z])\^?([0-9])\b', r'\1<sup>\2</sup>', text)
+    # Explicit superscripts with caret (e.g. 10^-5, 10^5, r^2, 10^-19)
+    text = re.sub(r'(\b\d+|\b[A-Za-z]+)\^([\+\-]?[0-9]+)\b', r'\1<sup>\2</sup>', text)
+
+    # Physics variable zero-subscripts and sub-numbers (e.g. B0 -> B₀, I0 -> I₀, B_0 -> B₀, r0 -> r₀)
+    text = re.sub(r'\b([B|I|r|v|N|E|F|K|V|P|q|m|a|b|c|x|y|z|L|R|C])_?([0-9])\b', r'\1<sub>\2</sub>', text)
 
     # Square root
     text = re.sub(r'sqrt\s*\(([^)]+)\)', r'√(\1)', text)
@@ -328,9 +336,10 @@ def _format_physics_math(text: str) -> str:
 
 
 def _format_multiplication(text: str) -> str:
-    """Replaces '*' with clean physics multiplication sign '×'."""
+    """Replaces '*' and standalone 'x' between numbers/powers with clean physics multiplication sign '×'."""
     text = re.sub(r'(\S+)\s*\*\s*(\S+)', r'\1 × \2', text)
     text = text.replace(' * ', ' × ')
+    text = re.sub(r'(\d+(?:\.\d+)?)\s*x\s*(10\^|10<sup>|\d+)', r'\1 × \2', text, flags=re.IGNORECASE)
     return text
 
 
