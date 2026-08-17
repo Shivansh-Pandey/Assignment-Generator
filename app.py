@@ -31,19 +31,65 @@ _TIMES_BOLD = "Times-Bold"
 _TIMES_ITALIC = "Times-Italic"
 _TIMES_BOLD_ITALIC = "Times-BoldItalic"
 
-_win_fonts = r"C:\Windows\Fonts"
-if os.path.exists(os.path.join(_win_fonts, "times.ttf")):
-    try:
-        pdfmetrics.registerFont(TTFont("CustomTimes", os.path.join(_win_fonts, "times.ttf")))
-        pdfmetrics.registerFont(TTFont("CustomTimes-Bold", os.path.join(_win_fonts, "timesbd.ttf")))
-        pdfmetrics.registerFont(TTFont("CustomTimes-Italic", os.path.join(_win_fonts, "timesi.ttf")))
-        pdfmetrics.registerFont(TTFont("CustomTimes-BoldItalic", os.path.join(_win_fonts, "timesbi.ttf")))
-        _TIMES_FONT = "CustomTimes"
-        _TIMES_BOLD = "CustomTimes-Bold"
-        _TIMES_ITALIC = "CustomTimes-Italic"
-        _TIMES_BOLD_ITALIC = "CustomTimes-BoldItalic"
-    except Exception:
-        pass
+FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+
+def _init_fonts():
+    global _TIMES_FONT, _TIMES_BOLD, _TIMES_ITALIC, _TIMES_BOLD_ITALIC
+
+    # 1. Project fonts directory (works on Vercel Linux, Windows, macOS)
+    if os.path.exists(FONTS_DIR):
+        t_reg = os.path.join(FONTS_DIR, "times.ttf")
+        t_bold = os.path.join(FONTS_DIR, "timesbd.ttf")
+        t_italic = os.path.join(FONTS_DIR, "timesi.ttf")
+        t_bolditalic = os.path.join(FONTS_DIR, "timesbi.ttf")
+        if os.path.exists(t_reg):
+            try:
+                pdfmetrics.registerFont(TTFont("ProjectTimes", t_reg))
+                pdfmetrics.registerFont(TTFont("ProjectTimes-Bold", t_bold if os.path.exists(t_bold) else t_reg))
+                pdfmetrics.registerFont(TTFont("ProjectTimes-Italic", t_italic if os.path.exists(t_italic) else t_reg))
+                pdfmetrics.registerFont(TTFont("ProjectTimes-BoldItalic", t_bolditalic if os.path.exists(t_bolditalic) else t_reg))
+                _TIMES_FONT = "ProjectTimes"
+                _TIMES_BOLD = "ProjectTimes-Bold"
+                _TIMES_ITALIC = "ProjectTimes-Italic"
+                _TIMES_BOLD_ITALIC = "ProjectTimes-BoldItalic"
+                return
+            except Exception:
+                pass
+
+        dv_reg = os.path.join(FONTS_DIR, "DejaVuSerif.ttf")
+        dv_bold = os.path.join(FONTS_DIR, "DejaVuSerif-Bold.ttf")
+        dv_italic = os.path.join(FONTS_DIR, "DejaVuSerif-Italic.ttf")
+        dv_bolditalic = os.path.join(FONTS_DIR, "DejaVuSerif-BoldItalic.ttf")
+        if os.path.exists(dv_reg):
+            try:
+                pdfmetrics.registerFont(TTFont("ProjectDejaVu", dv_reg))
+                pdfmetrics.registerFont(TTFont("ProjectDejaVu-Bold", dv_bold if os.path.exists(dv_bold) else dv_reg))
+                pdfmetrics.registerFont(TTFont("ProjectDejaVu-Italic", dv_italic if os.path.exists(dv_italic) else dv_reg))
+                pdfmetrics.registerFont(TTFont("ProjectDejaVu-BoldItalic", dv_bolditalic if os.path.exists(dv_bolditalic) else dv_reg))
+                _TIMES_FONT = "ProjectDejaVu"
+                _TIMES_BOLD = "ProjectDejaVu-Bold"
+                _TIMES_ITALIC = "ProjectDejaVu-Italic"
+                _TIMES_BOLD_ITALIC = "ProjectDejaVu-BoldItalic"
+                return
+            except Exception:
+                pass
+
+    # 2. Local Windows system fonts fallback (C:\Windows\Fonts)
+    win_fonts = r"C:\Windows\Fonts"
+    if os.path.exists(os.path.join(win_fonts, "times.ttf")):
+        try:
+            pdfmetrics.registerFont(TTFont("CustomTimes", os.path.join(win_fonts, "times.ttf")))
+            pdfmetrics.registerFont(TTFont("CustomTimes-Bold", os.path.join(win_fonts, "timesbd.ttf")))
+            pdfmetrics.registerFont(TTFont("CustomTimes-Italic", os.path.join(win_fonts, "timesi.ttf")))
+            pdfmetrics.registerFont(TTFont("CustomTimes-BoldItalic", os.path.join(win_fonts, "timesbi.ttf")))
+            _TIMES_FONT = "CustomTimes"
+            _TIMES_BOLD = "CustomTimes-Bold"
+            _TIMES_ITALIC = "CustomTimes-Italic"
+            _TIMES_BOLD_ITALIC = "CustomTimes-BoldItalic"
+        except Exception:
+            pass
+
+_init_fonts()
 
 # python-docx
 try:
@@ -205,47 +251,63 @@ def _format_subparts(text: str) -> str:
 
 
 def _format_physics_math(text: str) -> str:
-    """Converts physics math & Greek symbols into ReportLab Symbol font and HTML tags for 100% OS-agnostic rendering."""
+    """Converts physics math & Greek symbols into ReportLab HTML tags."""
+    is_ttf = _TIMES_FONT != "Times-Roman"
+
+    mu_sym = "μ" if is_ttf else '<font name="Symbol">m</font>'
+    pi_sym = "π" if is_ttf else '<font name="Symbol">p</font>'
+    theta_sym = "θ" if is_ttf else '<font name="Symbol">q</font>'
+    alpha_sym = "α" if is_ttf else '<font name="Symbol">a</font>'
+    beta_sym = "β" if is_ttf else '<font name="Symbol">b</font>'
+    gamma_sym = "γ" if is_ttf else '<font name="Symbol">g</font>'
+    phi_sym = "φ" if is_ttf else '<font name="Symbol">f</font>'
+    Phi_sym = "Φ" if is_ttf else '<font name="Symbol">F</font>'
+    omega_sym = "ω" if is_ttf else '<font name="Symbol">w</font>'
+    Omega_sym = "Ω" if is_ttf else '<font name="Symbol">W</font>'
+    Delta_sym = "Δ" if is_ttf else '<font name="Symbol">D</font>'
+    delta_sym = "δ" if is_ttf else '<font name="Symbol">d</font>'
+    lambda_sym = "λ" if is_ttf else '<font name="Symbol">l</font>'
+    rho_sym = "ρ" if is_ttf else '<font name="Symbol">r</font>'
+    sigma_sym = "σ" if is_ttf else '<font name="Symbol">s</font>'
+    epsilon_sym = "ε" if is_ttf else '<font name="Symbol">e</font>'
+    tau_sym = "τ" if is_ttf else '<font name="Symbol">t</font>'
+
     # mu0 / mu_0 / μ0 / µ0 / µ₀ / μ₀
-    text = re.sub(r'\\?mu_?0|&mu;_?0|[μµ]_?0|[μµ]₀', '<font name="Symbol">m</font><sub>0</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?mu\b|&mu;|[μµ]', '<font name="Symbol">m</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?mu_?0|&mu;_?0|[μµ]_?0|[μµ]₀', f'{mu_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?mu\b|&mu;|[μµ]', mu_sym, text, flags=re.IGNORECASE)
 
     # pi
-    text = re.sub(r'\\?pi_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">p</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?pi\b|&pi;|π', '<font name="Symbol">p</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?pi_?([0-9a-zA-Z]+)\b', f'{pi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?pi\b|&pi;|π', pi_sym, text, flags=re.IGNORECASE)
 
     # theta
-    text = re.sub(r'\\?theta_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">q</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?theta\b|&theta;|θ', '<font name="Symbol">q</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?theta_?([0-9a-zA-Z]+)\b', f'{theta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?theta\b|&theta;|θ', theta_sym, text, flags=re.IGNORECASE)
 
-    # alpha
-    text = re.sub(r'\\?alpha_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">a</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?alpha\b|&alpha;|α', '<font name="Symbol">a</font>', text, flags=re.IGNORECASE)
+    # alpha, beta, gamma, phi, etc.
+    text = re.sub(r'\\?alpha_?([0-9a-zA-Z]+)\b', f'{alpha_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?alpha\b|&alpha;|α', alpha_sym, text, flags=re.IGNORECASE)
 
-    # beta
-    text = re.sub(r'\\?beta_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">b</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?beta\b|&beta;|β', '<font name="Symbol">b</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?beta_?([0-9a-zA-Z]+)\b', f'{beta_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?beta\b|&beta;|β', beta_sym, text, flags=re.IGNORECASE)
 
-    # gamma
-    text = re.sub(r'\\?gamma_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">g</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?gamma\b|&gamma;|γ', '<font name="Symbol">g</font>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?gamma_?([0-9a-zA-Z]+)\b', f'{gamma_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?gamma\b|&gamma;|γ', gamma_sym, text, flags=re.IGNORECASE)
 
-    # phi
-    text = re.sub(r'\\?phi_?([0-9a-zA-Z]+)\b', r'<font name="Symbol">f</font><sub>\1</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?phi\b|ϕ|φ', '<font name="Symbol">f</font>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Phi\b|Φ', '<font name="Symbol">F</font>', text)
+    text = re.sub(r'\\?phi_?([0-9a-zA-Z]+)\b', f'{phi_sym}<sub>\\1</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?phi\b|ϕ|φ', phi_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Phi\b|Φ', Phi_sym, text)
 
-    # other Greek symbols
-    text = re.sub(r'\\?omega\b|&omega;|ω', '<font name="Symbol">w</font>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Omega\b|&Omega;|ohms?\b|Ω', '<font name="Symbol">W</font>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?Delta\b|&Delta;|Δ', '<font name="Symbol">D</font>', text)
-    text = re.sub(r'\\?delta\b|&delta;|δ', '<font name="Symbol">d</font>', text)
-    text = re.sub(r'\\?lambda\b|&lambda;|λ', '<font name="Symbol">l</font>', text)
-    text = re.sub(r'\\?rho\b|&rho;|ρ', '<font name="Symbol">r</font>', text)
-    text = re.sub(r'\\?sigma\b|&sigma;|σ', '<font name="Symbol">s</font>', text)
-    text = re.sub(r'\\?epsilon_?0|\\?eps_?0|ε_?0|ε₀', '<font name="Symbol">e</font><sub>0</sub>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?epsilon\b|\\?eps\b|ε', '<font name="Symbol">e</font>', text, flags=re.IGNORECASE)
-    text = re.sub(r'\\?tau\b|τ', '<font name="Symbol">t</font>', text)
+    text = re.sub(r'\\?omega\b|&omega;|ω', omega_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Omega\b|&Omega;|ohms?\b|Ω', Omega_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?Delta\b|&Delta;|Δ', Delta_sym, text)
+    text = re.sub(r'\\?delta\b|&delta;|δ', delta_sym, text)
+    text = re.sub(r'\\?lambda\b|&lambda;|λ', lambda_sym, text)
+    text = re.sub(r'\\?rho\b|&rho;|ρ', rho_sym, text)
+    text = re.sub(r'\\?sigma\b|&sigma;|σ', sigma_sym, text)
+    text = re.sub(r'\\?epsilon_?0|\\?eps_?0|ε_?0|ε₀', f'{epsilon_sym}<sub>0</sub>', text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?epsilon\b|\\?eps\b|ε', epsilon_sym, text, flags=re.IGNORECASE)
+    text = re.sub(r'\\?tau\b|τ', tau_sym, text)
 
     # Convert Unicode subscripts & superscripts
     sub_map = {'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ᵢ':'i','ₓ':'x','ᵧ':'y'}
